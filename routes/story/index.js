@@ -56,4 +56,26 @@ router.post("/create", async (req, res) => {
   }
 });
 
+router.get("/all", async (req, res, next) => {
+  try {
+    const stories = await Story.find();
+    res.status(200).json(stories);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:id", async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(403).send("Wrong request");
+    }
+    const story = await Story.findById(id);
+    res.status(200).json(story);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
