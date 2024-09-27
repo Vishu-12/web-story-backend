@@ -1,60 +1,68 @@
 const express = require("express");
 const router = express.Router();
-const Story = require("../../schemas/story");
-const Slide = require("../../schemas/slide");
+const { Story, Slide } = require("../../schemas/story");
+// const Slide = require("../../schemas/slide");
 
 router.post("/create", async (req, res) => {
   try {
-    console.log("Full req.body:", req.body);
+    const {
+      headings,
+      descriptions,
+      images,
+      category,
+      likes = 0,
+      bookmarks = 0,
+    } = req.body;
 
-    const story = new Story({
-      author: req.user._id,
-      slides: [],
-      likes: req.body.likes || 0,
-      bookmarks: req.body.bookmarks || 0,
-    });
-    const slides = Object.keys(req.body.headings).map((key) => {
-      const heading = req.body.headings[key];
-      const description = req.body.descriptions[key];
-      const image = req.body.files.find(
-        (file) => file.fieldname === key
-      )?.filename;
+    if (!headings || !descriptions || !category) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
 
-      console.log(
-        `Image: ${image}, Heading: ${heading}, Description: ${description}`
-      );
+    const slides = [];
+
+    for (let key of Object.keys(headings)) {
+      const heading = headings[key];
+      const description = descriptions[key];
+      const image = images[key];
 
       if (!heading || !description || !image) {
-        throw new Error(
-          `Missing heading, description, or image for slide: ${key}`
-        );
+        return res
+          .status(400)
+          .json({ message: `Missing data for slide: ${key}` });
       }
 
-      return new Slide({
+      const slide = new Slide({
         image,
         heading,
         description,
-        category: req.body.category,
+        category,
       });
+
+      await slide.save();
+      slides.push(slide._id);
+    }
+
+    const story = new Story({
+      author: req.user._id, // Assuming user data comes from a middleware
+      slides,
+      likes,
+      bookmarks,
     });
 
-    if (slides.length > 0) {
-      story.slides.push(...slides.map((slide) => slide._id));
+    await story.save();
 
-      await story.save();
-      return res
-        .status(201)
-        .json({ message: "Story created successfully", story });
-    } else {
-      return res.status(400).json({ message: "Error creating slides" });
-    }
+    return res
+      .status(201)
+      .json({ message: "Story created successfully", story });
   } catch (error) {
-    console.error("Error while creating story:", error.message);
+    console.error("Error creating story:", error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
   }
 });
+
+module.exports = router;
 
 router.get("/all", async (req, res, next) => {
   try {
@@ -73,6 +81,23 @@ router.get("/:id", async (req, res, next) => {
     }
     const story = await Story.findById(id);
     res.status(200).json(story);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// filtering based on category
+router.get("/filter/:category", async (req, res, next) => {
+  try {
+    const categories = req.params.category;
+    if (!categories) {
+      return res.status(403).send("Wrong request");
+    }
+    const stories = await Story.find().populate({
+      path: "slides",
+      match: { category: categories },
+    });
+    res.status(200).json(stories);
   } catch (err) {
     next(err);
   }
