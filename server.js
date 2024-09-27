@@ -16,6 +16,12 @@ app.use("/api/story", authMiddleware, storyRoutes);
 dotenv.config();
 const PORT = process.env.PORT;
 const MONGO_URL = process.env.MONGODB_URL;
+const cors = require("cors");
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 app.use((req, res, next) => {
   const log = `${req.method} - ${req.url} - ${req.ip} - ${new Date()}/n`;
