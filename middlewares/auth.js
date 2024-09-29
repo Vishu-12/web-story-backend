@@ -25,7 +25,11 @@ const authMiddleware = async (req, res, next) => {
       }
     } else {
       // if token does not exist in header
-      res.status(401).send("Access Denied 3");
+      if (req?.originalUrl?.includes('story/all')) {
+        next();
+      } else {
+        res.status(401).send("Access Denied 3");
+      }
     }
   } catch (err) {
     next(err);
