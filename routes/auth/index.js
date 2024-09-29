@@ -1,14 +1,16 @@
 const express = require("express");
 const router = express.Router();
-const User = require("../../schemas/user");
+const {User} = require("../../schemas/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 dotenv.config();
+
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
+
     if (!user) {
       res.status(400).json({ message: "Wrong email or password" });
     }

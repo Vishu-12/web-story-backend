@@ -1,44 +1,5 @@
 const mongoose = require("mongoose");
 
-// // Story model
-// const storySchema = new mongoose.Schema({
-//   author: {
-//     type: mongoose.Schema.Types.ObjectId,
-//     ref: "users",
-//   },
-//   slides: [
-//     {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Slide",
-//     },
-//   ],
-//   createdAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
-//   likes: {
-//     type: Number,
-//     default: 0,
-//   },
-//   bookmarks: {
-//     type: Boolean,
-//     default: false,
-//   },
-//   updatedAt: {
-//     type: Date,
-//     default: Date.now,
-//   },
-// });
-
-// storySchema.pre("save", function (next) {
-//   this.updatedAt = Date.now();
-//   next();
-// });
-
-// module.exports = mongoose.model("Story", storySchema);
-
-// const mongoose = require("mongoose");
-
 const slideSchema = new mongoose.Schema(
   {
     image: {
@@ -57,12 +18,6 @@ const slideSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    category: {
-      type: String,
-      required: true,
-      enum: ["food", "health", "travel", "movie", "education"],
-      trim: true,
-    },
   },
   {
     timestamps: true,
@@ -75,8 +30,14 @@ const storySchema = new mongoose.Schema(
   {
     author: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "users",
+      ref: "User",
       required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+      enum: ["food", "health", "travel", "movie", "education"],
+      trim: true,
     },
     slides: [
       {
@@ -85,15 +46,6 @@ const storySchema = new mongoose.Schema(
         required: true,
       },
     ],
-    likes: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    bookmarks: {
-      type: Boolean,
-      default: false,
-    },
   },
   {
     timestamps: true,
@@ -107,9 +59,33 @@ storySchema.pre("save", function (next) {
 
 const Story = mongoose.model("Story", storySchema);
 
-module.exports = { Slide, Story };
+const likeSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  story: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Story",
+    required: true,
+  },
+});
+const Like = mongoose.model("Like", likeSchema);
 
-// const stories = await Story.find().populate({
-//   path: "slides",
-//   match: { category: category }
-// });
+const bookmarkSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  story: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Story",
+    required: true,
+  },
+});
+
+const Bookmark = mongoose.model("Bookmark", bookmarkSchema);
+
+module.exports = { Slide, Story, Like, Bookmark };

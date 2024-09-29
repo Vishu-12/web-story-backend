@@ -1,27 +1,31 @@
-const express = require("express");
-const app = express();
+const fs = require("fs");
+const cors = require("cors");
 const dotenv = require("dotenv");
+const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
-const authMiddleware = require("./middlewares/auth");
-const storyRoutes = require("./routes/story");
-const fs = require("fs");
+
+const app = express();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+const authMiddleware = require("./middlewares/auth");
+const storyRoutes = require("./routes/story");
 const authRoutes = require("./routes/auth");
 
-app.use("/api/story", authMiddleware, storyRoutes);
-
 dotenv.config();
+
 const PORT = process.env.PORT;
 const MONGO_URL = process.env.MONGODB_URL;
-const cors = require("cors");
+
+
 app.use(
   cors({
     origin: "*",
   })
 );
+
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -30,6 +34,7 @@ app.use((req, res, next) => {
   );
   next();
 });
+
 app.use((req, res, next) => {
   const log = `${req.method} - ${req.url} - ${req.ip} - ${new Date()}/n`;
   fs.appendFile("log.txt", log, (err) => {
@@ -41,10 +46,12 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/story", authMiddleware, storyRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
+
 app.use((err, req, res, next) => {
   let log;
   log = err.stack;
