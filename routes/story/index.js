@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const { Story, Slide, Like, Bookmark } = require("../../schemas/story");
 
 router.post("/create", async (req, res) => {
@@ -120,16 +121,16 @@ router.get("/liked", async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "Story Liked successfully", likes });
+      .json(likes);
   } catch (error) {
-    console.error("Error Liked story:", error);
+    console.error("Error Liked:", error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
   }
 });
 
-router.get("/bookmarked", async (req, res) => {
+router.get("/saved", async (req, res) => {
 
   try {
 
@@ -139,9 +140,9 @@ router.get("/bookmarked", async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "Story Liked successfully", bookmarks });
+      .json(bookmarks);
   } catch (error) {
-    console.error("Error Liked story:", error);
+    console.error("Error saved:", error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
