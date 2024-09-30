@@ -83,7 +83,7 @@ const bookmarkSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Story",
     required: true,
-  },
+  }
 });
 
 const Bookmark = mongoose.model("Bookmark", bookmarkSchema);

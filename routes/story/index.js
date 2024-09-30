@@ -6,6 +6,7 @@ const { Story, Slide, Like, Bookmark } = require("../../schemas/story");
 router.post("/create", async (req, res) => {
 
   try {
+    console.log(`{category, slides}=>`,req.body);
 
     let {category, slides} = req.body;
 
@@ -13,7 +14,7 @@ router.post("/create", async (req, res) => {
     if (slides.length < 3) {
       return res.status(400).json({ message: "Missing required fields." });
     }
-    slides = JSON.parse(slides);
+    // slides = JSON.parse(slides);
     console.log(`parsed slides =>`,slides);
     const _slides = []
 
@@ -93,6 +94,13 @@ router.post("/like/:id", async (req, res) => {
     const {id} = req.params;
     const {_id} = req.user;
 
+    const alreadyLiked = await Like.findOne({story: id, user: _id});
+    if (alreadyLiked) {
+      return res
+      .status(202)
+      .json({ message: "Story Already Liked", like: alreadyLiked });
+    }
+
     const like = new Like({
       story: id,
       user: _id
@@ -111,6 +119,25 @@ router.post("/like/:id", async (req, res) => {
   }
 });
 
+router.get("/likes/:id", async (req, res) => {
+
+  try {
+
+    const {id} = req.params;
+
+    const likes = await Like.find({story: id})
+
+    return res
+      .status(200)
+      .json(likes.length);
+  } catch (error) {
+    console.error("Error Liked:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
 router.get("/liked", async (req, res) => {
 
   try {
@@ -120,29 +147,10 @@ router.get("/liked", async (req, res) => {
     const likes = await Like.find({user: _id}).populate(['user','story'])
 
     return res
-      .status(201)
+      .status(200)
       .json(likes);
   } catch (error) {
     console.error("Error Liked:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
-  }
-});
-
-router.get("/saved", async (req, res) => {
-
-  try {
-
-    const {_id} = req.user;
-
-    const bookmarks = await Bookmark.find({user: _id}).populate(['user','story']) 
-
-    return res
-      .status(201)
-      .json(bookmarks);
-  } catch (error) {
-    console.error("Error saved:", error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
@@ -156,6 +164,13 @@ router.post("/save/:id", async (req, res) => {
     const {id} = req.params;
     const {_id} = req.user;
 
+    const alreadySaved = await Bookmark.findOne({story: id, user: _id});
+    if (alreadySaved) {
+      return res
+      .status(202)
+      .json({ message: "Story Already Saved", save: alreadySaved });
+    }
+
     const bookmark = new Bookmark({
       story: id,
       user: _id
@@ -165,9 +180,52 @@ router.post("/save/:id", async (req, res) => {
 
     return res
       .status(201)
-      .json({ message: "Story Liked successfully", bookmark });
+      .json({ message: "Story Save successfully", bookmark });
   } catch (error) {
-    console.error("Error Liked story:", error);
+    console.error("Error Save story:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+router.get("/saves/:id", async (req, res) => {
+
+  try {
+
+    const {id} = req.params;
+
+    const saves = await Bookmark.find({story: id})
+
+    return res
+      .status(200)
+      .json(saves.length);
+  } catch (error) {
+    console.error("Error Saves:", error);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
+  }
+});
+
+router.get("/saved", async (req, res) => {
+
+  try {
+
+    const {_id} = req.user;
+
+    const bookmarks = await Bookmark.find({user: _id}).populate({
+      path: 'story',
+      populate: {
+        path: 'slides'
+      }
+    });
+
+    return res
+      .status(200)
+      .json(bookmarks);
+  } catch (error) {
+    console.error("Error saved:", error);
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
@@ -185,6 +243,16 @@ router.get("/all", async (req, res, next) => {
       stories = await Story.find().populate(['author', 'slides']);
       console.log(stories)
     }
+    res.status(200).json(stories);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/my", async (req, res, next) => {
+  try {
+    const {_id} = req.user
+    stories = await Story.find({author: _id}).populate(['author', 'slides']);
     res.status(200).json(stories);
   } catch (err) {
     next(err);
