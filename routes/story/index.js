@@ -55,8 +55,6 @@ router.put("/edit/:id", async (req, res) => {
     if (slides.length < 3) {
       return res.status(400).json({ message: "Missing required fields." });
     }
-    slides = JSON.parse(slides);
-    console.log(`parsed slides =>`, slides);
     const _slides = [];
 
     for (let idx = 0; idx < slides.length; idx++) {
