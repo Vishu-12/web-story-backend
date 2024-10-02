@@ -184,7 +184,7 @@ router.get("/saves/:id", async (req, res) => {
 
     const saves = await Bookmark.find({ story: id });
 
-    return res.status(200).json(saves.length);
+    return res.status(200).json(saves);
   } catch (error) {
     console.error("Error Saves:", error);
     return res
