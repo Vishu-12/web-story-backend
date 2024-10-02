@@ -4,19 +4,18 @@ const router = express.Router();
 const { Story, Slide, Like, Bookmark } = require("../../schemas/story");
 
 router.post("/create", async (req, res) => {
-
   try {
-    console.log(`{category, slides}=>`,req.body);
+    console.log(`{category, slides}=>`, req.body);
 
-    let {category, slides} = req.body;
+    let { category, slides } = req.body;
 
-    console.log(`{category, slides}=>`,{category, slides});
+    console.log(`{category, slides}=>`, { category, slides });
     if (slides.length < 3) {
       return res.status(400).json({ message: "Missing required fields." });
     }
     // slides = JSON.parse(slides);
-    console.log(`parsed slides =>`,slides);
-    const _slides = []
+    console.log(`parsed slides =>`, slides);
+    const _slides = [];
 
     for (let idx = 0; idx < slides.length; idx++) {
       const slide = new Slide({
@@ -24,7 +23,7 @@ router.post("/create", async (req, res) => {
         heading: slides[idx].heading,
         description: slides[idx].description,
       });
-      
+
       _slides.push((await slide.save())._id);
     }
 
@@ -48,33 +47,39 @@ router.post("/create", async (req, res) => {
 });
 
 router.put("/edit/:id", async (req, res) => {
-
   try {
+    const { id } = req.params;
+    let { category, slides } = req.body;
 
-    const {id} = req.params;
-    let {category, slides} = req.body;
-
-    console.log(`{category, slides} =>`,{category, slides});
+    console.log(`{category, slides} =>`, { category, slides });
     if (slides.length < 3) {
       return res.status(400).json({ message: "Missing required fields." });
     }
     slides = JSON.parse(slides);
-    console.log(`parsed slides =>`,slides);
-    const _slides = []
+    console.log(`parsed slides =>`, slides);
+    const _slides = [];
 
     for (let idx = 0; idx < slides.length; idx++) {
       let slide = slides[idx];
       console.log(`slide => `, slide);
-      slide = await Slide.findByIdAndUpdate(slide._id, {
-        image: slides[idx].image,
-        heading: slides[idx].heading,
-        description: slides[idx].description,
-      }, {upsert: true})
-      
+      slide = await Slide.findByIdAndUpdate(
+        slide._id,
+        {
+          image: slides[idx].image,
+          heading: slides[idx].heading,
+          description: slides[idx].description,
+        },
+        { upsert: true }
+      );
+
       _slides.push(slide._id);
     }
 
-    const story = await Story.findByIdAndUpdate(id, {category, slides: _slides}, {upsert: true}).populate(['author', 'slides']);
+    const story = await Story.findByIdAndUpdate(
+      id,
+      { category, slides: _slides },
+      { upsert: true }
+    ).populate(["author", "slides"]);
 
     return res
       .status(202)
@@ -88,29 +93,25 @@ router.put("/edit/:id", async (req, res) => {
 });
 
 router.post("/like/:id", async (req, res) => {
-
   try {
+    const { id } = req.params;
+    const { _id } = req.user;
 
-    const {id} = req.params;
-    const {_id} = req.user;
-
-    const alreadyLiked = await Like.findOne({story: id, user: _id});
+    const alreadyLiked = await Like.findOne({ story: id, user: _id });
     if (alreadyLiked) {
       return res
-      .status(202)
-      .json({ message: "Story Already Liked", like: alreadyLiked });
+        .status(202)
+        .json({ message: "Story Already Liked", like: alreadyLiked });
     }
 
     const like = new Like({
       story: id,
-      user: _id
-    })
+      user: _id,
+    });
 
-    await like.save()
+    await like.save();
 
-    return res
-      .status(201)
-      .json({ message: "Story Liked successfully", like });
+    return res.status(201).json({ message: "Story Liked successfully", like });
   } catch (error) {
     console.error("Error Liked story:", error);
     return res
@@ -120,16 +121,12 @@ router.post("/like/:id", async (req, res) => {
 });
 
 router.get("/likes/:id", async (req, res) => {
-
   try {
+    const { id } = req.params;
 
-    const {id} = req.params;
+    const likes = await Like.find({ story: id });
 
-    const likes = await Like.find({story: id})
-
-    return res
-      .status(200)
-      .json(likes.length);
+    return res.status(200).json(likes);
   } catch (error) {
     console.error("Error Liked:", error);
     return res
@@ -139,16 +136,12 @@ router.get("/likes/:id", async (req, res) => {
 });
 
 router.get("/liked", async (req, res) => {
-
   try {
+    const { _id } = req.user;
 
-    const {_id} = req.user;
+    const likes = await Like.find({ user: _id }).populate(["user", "story"]);
 
-    const likes = await Like.find({user: _id}).populate(['user','story'])
-
-    return res
-      .status(200)
-      .json(likes);
+    return res.status(200).json(likes);
   } catch (error) {
     console.error("Error Liked:", error);
     return res
@@ -158,25 +151,23 @@ router.get("/liked", async (req, res) => {
 });
 
 router.post("/save/:id", async (req, res) => {
-
   try {
+    const { id } = req.params;
+    const { _id } = req.user;
 
-    const {id} = req.params;
-    const {_id} = req.user;
-
-    const alreadySaved = await Bookmark.findOne({story: id, user: _id});
+    const alreadySaved = await Bookmark.findOne({ story: id, user: _id });
     if (alreadySaved) {
       return res
-      .status(202)
-      .json({ message: "Story Already Saved", save: alreadySaved });
+        .status(202)
+        .json({ message: "Story Already Saved", save: alreadySaved });
     }
 
     const bookmark = new Bookmark({
       story: id,
-      user: _id
-    })
+      user: _id,
+    });
 
-    await bookmark.save()
+    await bookmark.save();
 
     return res
       .status(201)
@@ -190,16 +181,12 @@ router.post("/save/:id", async (req, res) => {
 });
 
 router.get("/saves/:id", async (req, res) => {
-
   try {
+    const { id } = req.params;
 
-    const {id} = req.params;
+    const saves = await Bookmark.find({ story: id });
 
-    const saves = await Bookmark.find({story: id})
-
-    return res
-      .status(200)
-      .json(saves.length);
+    return res.status(200).json(saves.length);
   } catch (error) {
     console.error("Error Saves:", error);
     return res
@@ -209,21 +196,17 @@ router.get("/saves/:id", async (req, res) => {
 });
 
 router.get("/saved", async (req, res) => {
-
   try {
+    const { _id } = req.user;
 
-    const {_id} = req.user;
-
-    const bookmarks = await Bookmark.find({user: _id}).populate({
-      path: 'story',
+    const bookmarks = await Bookmark.find({ user: _id }).populate({
+      path: "story",
       populate: {
-        path: 'slides'
-      }
+        path: "slides",
+      },
     });
 
-    return res
-      .status(200)
-      .json(bookmarks);
+    return res.status(200).json(bookmarks);
   } catch (error) {
     console.error("Error saved:", error);
     return res
@@ -234,14 +217,14 @@ router.get("/saved", async (req, res) => {
 
 router.get("/all", async (req, res, next) => {
   try {
-    let stories = []
-    const {category} = req.query;
+    let stories = [];
+    const { category } = req.query;
     if (category?.trim()) {
-      stories = await Story.find({category}).populate(['author', 'slides']);
-      console.log(stories)
+      stories = await Story.find({ category }).populate(["author", "slides"]);
+      console.log(stories);
     } else {
-      stories = await Story.find().populate(['author', 'slides']);
-      console.log(stories)
+      stories = await Story.find().populate(["author", "slides"]);
+      console.log(stories);
     }
     res.status(200).json(stories);
   } catch (err) {
@@ -251,8 +234,8 @@ router.get("/all", async (req, res, next) => {
 
 router.get("/my", async (req, res, next) => {
   try {
-    const {_id} = req.user
-    stories = await Story.find({author: _id}).populate(['author', 'slides']);
+    const { _id } = req.user;
+    stories = await Story.find({ author: _id }).populate(["author", "slides"]);
     res.status(200).json(stories);
   } catch (err) {
     next(err);
@@ -265,7 +248,7 @@ router.get("/:id", async (req, res, next) => {
     if (!id) {
       return res.status(403).send("Wrong request");
     }
-    const story = await Story.findById(id).populate(['author','slides']);
+    const story = await Story.findById(id).populate(["author", "slides"]);
     res.status(200).json(story);
   } catch (err) {
     next(err);
